@@ -392,7 +392,7 @@ def recompute_all_metrics(
     # 设置LLM judge配置（如果未提供）
     if llm_judge_config is None:
         llm_judge_config = {
-            "base_url": "http://hk01dgx022:8005/v1",
+            "base_url": "http://localhost:8005/v1",
             "model": "Qwen/Qwen3-30B-A3B-FP8",
             "api_key": "EMPTY",
             "modelgraded_template": "llm_judger",
