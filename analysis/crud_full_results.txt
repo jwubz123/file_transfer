@@ -1,0 +1,35 @@
+14 -Overall Score: 0.6326
+14 -MRR:           0.7591
+14 -NDCG:          0.6426
+14 -NCG:           0.6620
+14 - INFO -
+按问题类型统计:
+15 -2wikimultihopqa: Overall=0.4460, MRR=0.8000, NDCG=0.2301
+15 -code-retrieval: Overall=0.4586, MRR=0.9333, NDCG=0.4586
+15 -codexglue-adv-retrieval: Overall=0.6131, MRR=0.5833, NDCG=0.6131
+15 -complex_logic_1doc: Overall=0.6739, MRR=0.5250, NDCG=0.5693
+16 -complex_logic_2docs: Overall=0.7398, MRR=0.9167, NDCG=0.8544
+16 -conflict_docs: Overall=0.8400, MRR=1.0000, NDCG=1.0000
+16 -diff_language_1doc_english: Overall=0.7912, MRR=0.7083, NDCG=0.7562
+16 -diff_language_1doc_pinyin: Overall=0.9100, MRR=0.9333, NDCG=0.9500
+17 -diff_language_1doc_traditional: Overall=0.9886, MRR=0.9250, NDCG=0.9431
+17 -diff_language_1doc_typo: Overall=0.9886, MRR=0.9250, NDCG=0.9431
+17 -factual_qa_1doc: Overall=0.9926, MRR=0.9500, NDCG=0.9631
+17 -factual_qa_2docs: Overall=0.9029, MRR=0.9500, NDCG=0.9146
+18 -factual_qa_3docs: Overall=0.8947, MRR=1.0000, NDCG=0.9935
+18 -hotpotqa: Overall=0.4918, MRR=1.0000, NDCG=0.4589
+18 -LIMIT: Overall=0.1330, MRR=0.1543, NDCG=0.1452
+18 -ranking: Overall=0.5000, MRR=0.5000, NDCG=0.5000
+19 -musique: Overall=0.1018, MRR=0.4036, NDCG=0.1091
+19 -no_original_keywords: Overall=0.7946, MRR=0.8000, NDCG=0.8130
+19 -refusal: Overall=0.7000, MRR=nan, NDCG=nan
+19 -retrieval_keywords: Overall=0.1706, MRR=0.4259, NDCG=0.1706
+19 -retrieval-many-recall: Overall=0.1129, MRR=0.6250, NDCG=0.1129
+20 -retrieval: Overall=0.2357, MRR=0.3333, NDCG=0.2357
+20 -terminology_1doc: Overall=0.9926, MRR=0.9500, NDCG=0.9631
+20 -unnormal: Overall=0.6000, MRR=1.0000, NDCG=1.0000
+20 -URL: Overall=0.2631, MRR=0.2500, NDCG=0.2631
+21 -abstract_concepts_retrieval_ch: Overall=0.5370, MRR=0.8667, NDCG=0.5370
+21 -abstract_concepts_retrieval_ch_keywords: Overall=0.6887, MRR=1.0000, NDCG=0.6887
+21 -abstract_concepts_retrieval_eng: Overall=0.5647, MRR=1.0000, NDCG=0.5647
+21 -abstract_concepts_retrieval_eng_keywords: Overall=0.6074, MRR=0.8000, NDCG=0.6074
