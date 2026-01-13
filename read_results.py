@@ -4,13 +4,14 @@ RAG系统结果可视化工具
 用于将低于特定分数阈值的样本以HTML格式可视化，便于调试分析
 
 用法:
-    python read_results.py <experiment_dir> --threshold <score> [--score-column <column_name>] [--baseline <baseline_csv>]
+    python read_results.py <experiment_dir> --threshold <score> [--score-column <column_name>] [--baseline <baseline_csv>] [--samples <id1> <id2> ...]
 
 参数:
     experiment_dir: 实验结果目录名称（如 experiment_20251224_104240）
     --threshold: 分数阈值（默认0.8）
     --score-column: 分数列名（默认 overall_score）
     --baseline: Baseline CSV文件路径（可选）
+    --samples: 手动指定要显示的样本ID列表（可选，如果不指定则自动选择每类4个样本）
 
 输出:
     - html/visualization_processed.html: processed_json的可视化
@@ -71,7 +72,7 @@ def build_keyword_colors(keywords):
 class RAGResultsVisualizer:
     """RAG结果可视化器"""
     
-    def __init__(self, results_dir: Path, threshold: float, score_column: str = "overall_score", baseline_csv: Optional[Path] = None):
+    def __init__(self, results_dir: Path, threshold: float, score_column: str = "overall_score", baseline_csv: Optional[Path] = None, manual_samples: Optional[List[str]] = None):
         self.results_dir = results_dir
         self.threshold = threshold
         self.score_column = score_column
@@ -80,6 +81,7 @@ class RAGResultsVisualizer:
         self.html_dir = results_dir / "html"
         self.html_dir.mkdir(exist_ok=True)
         self.baseline_csv = baseline_csv
+        self.manual_samples = manual_samples
         
         self.csv_data = self._load_csv_data()
         self.scores = {row['question_id']: row for row in self.csv_data}
@@ -207,8 +209,12 @@ class RAGResultsVisualizer:
                 low_samples.append(qid)
         return low_samples
     
-    def get_selected_samples_by_difficulty(self) -> List[str]:
-        """对每个difficulty类别选取2个llm_judge_score=0和2个llm_judge_score=1的样本"""
+    def get_selected_samples_by_difficulty(self, num_per_category: int = 2) -> List[str]:
+        """对每个difficulty/question_type类别选取指定数量的llm_judge_score=0和1的样本
+        
+        Args:
+            num_per_category: 每个类别每种分数选取的样本数量（默认2个）
+        """
         difficulty_groups = defaultdict(lambda: {'zero': [], 'one': []})
         
         for row in self.csv_data:
@@ -224,16 +230,22 @@ class RAGResultsVisualizer:
         
         selected = []
         for difficulty, groups in difficulty_groups.items():
-            # 每个difficulty选2个score=0和2个score=1
-            selected.extend(groups['zero'][:2])
-            selected.extend(groups['one'][:2])
+            # 每个difficulty选num_per_category个score=0和num_per_category个score=1
+            selected.extend(groups['zero'][:num_per_category])
+            selected.extend(groups['one'][:num_per_category])
         
         return selected
     
     def generate_visualizations(self):
         """生成两个HTML可视化文件"""
-        # 使用新的选取逻辑
-        low_score_samples = self.get_selected_samples_by_difficulty()
+        # 使用manual_samples或自动选取逻辑
+        if self.manual_samples:
+            low_score_samples = self.manual_samples
+            print(f"使用手动指定的 {len(low_score_samples)} 个样本")
+        else:
+            # 默认每类选2个，总共4个（2个score=0 + 2个score=1）
+            low_score_samples = self.get_selected_samples_by_difficulty(num_per_category=2)
+            print(f"自动选取了 {len(low_score_samples)} 个样本")
         # 读取JSONL文件并保存低分样本
         input_jsonl = self.results_dir / "data.jsonl"
         output_jsonl = self.html_dir / "low_score_samples.jsonl"
@@ -1381,6 +1393,14 @@ def main():
         help='Baseline CSV文件路径（可选）'
     )
     
+    parser.add_argument(
+        '--samples',
+        type=str,
+        nargs='+',
+        default=None,
+        help='手动指定要显示的样本ID列表（可选，如果不指定则自动选择每类4个样本）'
+    )
+    
     args = parser.parse_args()
     
     script_dir = Path(__file__).parent.parent
@@ -1396,12 +1416,14 @@ def main():
     print()
     
     baseline_path = Path(args.baseline) if args.baseline else None
+    manual_samples = args.samples if args.samples else None
     
     visualizer = RAGResultsVisualizer(
         results_dir=results_dir,
         threshold=args.threshold,
         score_column=args.score_column,
-        baseline_csv=baseline_path
+        baseline_csv=baseline_path,
+        manual_samples=manual_samples
     )
     
     visualizer.generate_visualizations()
