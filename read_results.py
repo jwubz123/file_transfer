@@ -4,7 +4,7 @@ RAG系统结果可视化工具
 用于将低于特定分数阈值的样本以HTML格式可视化，便于调试分析
 
 用法:
-    python read_results.py <experiment_dir> --threshold <score> [--score-column <column_name>] [--baseline <baseline_csv>] [--samples <id1> <id2> ...]
+    python read_results.py <experiment_dir> --threshold <score> [--score-column <column_name>] [--baseline <baseline_csv>] [--samples <id1> <id2> ...] [--exclude-samples <id1> <id2> ...]
 
 参数:
     experiment_dir: 实验结果目录名称（如 experiment_20251224_104240）
@@ -12,6 +12,7 @@ RAG系统结果可视化工具
     --score-column: 分数列名（默认 overall_score）
     --baseline: Baseline CSV文件路径（可选）
     --samples: 手动指定要显示的样本ID列表（可选，如果不指定则自动选择每类4个样本）
+    --exclude-samples: 自动选择样本时要排除的样本ID列表（可选）
 
 输出:
     - html/visualization_processed.html: processed_json的可视化
@@ -72,7 +73,7 @@ def build_keyword_colors(keywords):
 class RAGResultsVisualizer:
     """RAG结果可视化器"""
     
-    def __init__(self, results_dir: Path, threshold: float, score_column: str = "overall_score", baseline_csv: Optional[Path] = None, manual_samples: Optional[List[str]] = None):
+    def __init__(self, results_dir: Path, threshold: float, score_column: str = "overall_score", baseline_csv: Optional[Path] = None, manual_samples: Optional[List[str]] = None, exclude_samples: Optional[List[str]] = None):
         self.results_dir = results_dir
         self.threshold = threshold
         self.score_column = score_column
@@ -82,6 +83,7 @@ class RAGResultsVisualizer:
         self.html_dir.mkdir(exist_ok=True)
         self.baseline_csv = baseline_csv
         self.manual_samples = manual_samples
+        self.exclude_samples = set(exclude_samples) if exclude_samples else set()
         
         self.csv_data = self._load_csv_data()
         self.scores = {row['question_id']: row for row in self.csv_data}
@@ -219,6 +221,10 @@ class RAGResultsVisualizer:
         
         for row in self.csv_data:
             qid = row['question_id']
+            # 跳过被排除的样本
+            if qid in self.exclude_samples:
+                continue
+            
             difficulty = row.get('difficulty', row.get('question_type', 'Unknown'))
             score = row.get('llm_judge_score', 0.0)
             
@@ -1401,6 +1407,14 @@ def main():
         help='手动指定要显示的样本ID列表（可选，如果不指定则自动选择每类4个样本）'
     )
     
+    parser.add_argument(
+        '--exclude-samples',
+        type=str,
+        nargs='+',
+        default=None,
+        help='自动选择样本时要排除的样本ID列表（可选）'
+    )
+    
     args = parser.parse_args()
     
     script_dir = Path(__file__).parent.parent
@@ -1417,13 +1431,15 @@ def main():
     
     baseline_path = Path(args.baseline) if args.baseline else None
     manual_samples = args.samples if args.samples else None
+    exclude_samples = args.exclude_samples if args.exclude_samples else None
     
     visualizer = RAGResultsVisualizer(
         results_dir=results_dir,
         threshold=args.threshold,
         score_column=args.score_column,
         baseline_csv=baseline_path,
-        manual_samples=manual_samples
+        manual_samples=manual_samples,
+        exclude_samples=exclude_samples
     )
     
     visualizer.generate_visualizations()
