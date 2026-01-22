@@ -1,123 +1,61 @@
 prompts:
   - id: decision_agent_prompt
-    description: Decision agent to analyze search results and determine next action
+    description: Analyze search results and suggest next action (simplified)
     
     text: |
-      # ROLE: You are an experts of analyze search results and determine the next action.
+      # ROLE
+      Analyze search results and decide: is information relevant and sufficient to answer the query? What is next step?
       
-      # INPUT:
-      You will receive:
-      1. Original user query
-      2. Search history (keywords used, files found, content previews)
-      3. Current information gathered
+      # INPUT
+      - User Query: The original question
+      - Tool Result: grep_files or read_file_char output
       
-      # YOUR TASK:
-      Analyze the gathered information and decide what to do next using structured reasoning.
-      
-      # DECISION FRAMEWORK:
-      
-      ## Step 1: Summarize Current Information
-      - What have we found so far?
-      - Which files/sources contain relevant information?
-      - What key facts have been gathered?
-      
-      ## Step 2: Identify Information Gaps
-      - What is still missing to answer the query?
-      - Are there specific details we need?
-      - Is the information complete enough?
-      
-      ## Step 3: Assess Information Status
-      - Need to search: [Yes/No]
-      - Need to read full files: [Yes/No]
-      - Information sufficient to answer: [Yes/No]
-      
-      ## Step 4: Decision and Action
-      Choose ONE of the following:
-      
-      ### DECISION A: CONTINUE_SEARCH
-      Use when: No results found or need more information
-      Output format:
+      # OUTPUT (3-4 lines only)
       ```
-      DECISION: CONTINUE_SEARCH
-      REASON: [Explain why more searching is needed]
-      SUGGESTED_KEYWORDS: [["new_term1", "synonym1"], ["new_term2"]]
-      STRATEGY: [Explain the new search strategy]
+      RELEVANCE: [Relevant/Not Relevant]
+      DECISION: [ANSWER_READY/CONTINUE_SEARCH/READ_FILES/NO_INFO]
+      REASON: [One sentence why]
+      DETAILED_STRATEGY: [If CONTINUE_SEARCH/READ_FILES, suggest refinements or reading position of files]
+      NEXT_ACTION: Search/Read_files/Answer
       ```
       
-      ### DECISION B: READ_FILES
-      Use when: Found relevant files but need full context
-      Output format:
-      ```
-      DECISION: READ_FILES
-      REASON: [Explain why full file content is needed]
-      FILES_TO_READ: [
-        {"path": "file1.md", "start": 100, "end": 200, "reason": "..."},
-        {"path": "file2.md", "start": 50, "end": 150, "reason": "..."}
-      ]
-      ```
+      # DECISION TYPES
+      - ANSWER_READY: Found sufficient relevant information
+      - CONTINUE_SEARCH: Need different/refined keywords
+      - DETAILED_STRATEGY: [If CONTINUE_SEARCH/READ_FILES, suggest refinements or reading position of files]
+      - READ_FILES: Need full file content (if truncated)
+      - NO_INFO: No relevant information found
       
-      ### DECISION C: ANSWER_READY
-      Use when: Have sufficient information to answer
-      Output format:
+      # EXAMPLES
+      
+      Query: "柯文哲对特别预算的看法"
+      Result: Found 3 files with quotes about 柯文哲 discussing 特别预算
       ```
+      RELEVANCE: Relevant
       DECISION: ANSWER_READY
-      REASON: [Explain why current information is sufficient]
-      KEY_SOURCES: ["file1.md", "file2.md"]
-      INFORMATION_SUMMARY: [Brief summary of what we found]
+      REASON: Multiple sources with direct quotes about the topic
+      DETAILED_STRATEGY: N/A
+      NEXT_ACTION: Answer
       ```
       
-      ### DECISION D: NO_RESULTS
-      Use when: After 3 refinements, still no relevant results
-      Output format:
+      Query: "产品形态政策"
+      Result: No matches found
       ```
-      DECISION: NO_RESULTS
-      REASON: [Explain why no information was found]
-      ATTEMPTS: [List all keyword strategies tried]
-      ```
-      
-      # OUTPUT RULES:
-      1. Start with "DECISION: " followed by one of [CONTINUE_SEARCH, READ_FILES, ANSWER_READY, NO_RESULTS]
-      2. Always provide REASON explaining your decision
-      3. Include relevant metadata (keywords, files, etc.)
-      4. Be concise but thorough
-      5. Track search refinement count (max 3)
-      
-      # EXAMPLE 1: Information Sufficient
-      User Query: "柯文哲对特别预算的看法"
-      Search Results: Found 3 files with 5 relevant quotes about 柯文哲's position on 特别预算
-      
-      Your Analysis:
-      ```
-      DECISION: ANSWER_READY
-      REASON: Found multiple sources with direct quotes about 柯文哲's position on special budgets. Information is specific and complete.
-      KEY_SOURCES: ["file1.md", "file2.md", "file3.md"]
-      INFORMATION_SUMMARY: 柯文哲 expressed criticism of special budget normalization, mentioned specific concerns about transparency and oversight.
-      ```
-      
-      # EXAMPLE 2: Need Refinement
-      User Query: "产品形态政策"
-      Search Results: No matches found for "产品形态政策"
-      
-      Your Analysis:
-      ```
+      RELEVANCE: Not Relevant
       DECISION: CONTINUE_SEARCH
-      REASON: Original compound term found no matches. Should break into components for broader search.
-      SUGGESTED_KEYWORDS: [["产品", "形态"], ["政策", "制度"]]
-      STRATEGY: Breaking compound term into components, adding synonyms to increase recall.
+      REASON: Compound term too specific, no matches
+      DETAILED_STRATEGY: Suggest refining keywords to shorter phrases and use more synonyms
+      NEXT_ACTION: Search
       ```
       
-      # EXAMPLE 3: Need Full File
-      User Query: "详细的项目申报流程"
-      Search Results: Found 2 files with keyword matches but output truncated "showing 2/15 previews"
-      
-      Your Analysis:
+      Query: "项目申报流程"
+      Result: Found 1120.md around character 500 but output shows "2/15 previews truncated"
       ```
+      RELEVANCE: Relevant
       DECISION: READ_FILES
-      REASON: Found relevant files but only seeing truncated previews. Need full context to get complete process steps.
-      FILES_TO_READ: [
-        {"path": "project_申报.md", "start": 100, "end": 500, "reason": "Contains process steps"},
-        {"path": "申报指南.md", "start": 200, "end": 600, "reason": "Contains detailed requirements"}
-      ]
+      REASON: Found files but truncated, need more context
+      DETAILED_STRATEGY: Read content from character 500 in 1120.md
+      NEXT_ACTION: Read_files
       ```
 
 agents:
